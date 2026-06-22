@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: resume_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: smart_resume_db
+    networks:
+      - resume_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: resume_backend
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/smart_resume_db
+      JWT_SECRET_KEY: change-this-in-production-min-32-chars
+      FLASK_ENV: production
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      - mongodb
+    networks:
+      - resume_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: resume_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - resume_net
+
+volumes:
+  mongo_data:
+  uploads:
+
+networks:
+  resume_net:
+    driver: bridge
